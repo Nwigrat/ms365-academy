@@ -1,14 +1,21 @@
 import { useAppContext } from "../context/AppContext";
-import MODULES from "../data/modules";
 
 export default function Dashboard() {
-  const { appState, getModuleProgress, navigateTo } = useAppContext();
+  const { appState, modules, modulesLoading, getModuleProgress, navigateTo } = useAppContext();
 
   const completedCount = Object.values(appState.moduleProgress).filter(
     (p) => p.passed
   ).length;
-  const quizzesPassed = completedCount;
   const displayName = appState.user?.firstName || "Agent";
+
+  if (modulesLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, color: "#8aa4c0" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 12 }}>⏳</div>
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -33,7 +40,7 @@ export default function Dashboard() {
           <div className="stat-label">Modules Completed</div>
         </div>
         <div className="stat-card">
-          <div className="stat-number">{quizzesPassed}</div>
+          <div className="stat-number">{completedCount}</div>
           <div className="stat-label">Quizzes Passed</div>
         </div>
         <div className="stat-card">
@@ -44,13 +51,9 @@ export default function Dashboard() {
 
       <h2 style={{ color: "#4fc3f7", marginBottom: 16 }}>📌 Continue Learning</h2>
       <div className="module-grid">
-        {MODULES.map((mod) => {
+        {modules.map((mod) => {
           const progress = getModuleProgress(mod.id);
-          const pct = progress.passed
-            ? 100
-            : progress.quizAttempts > 0
-            ? 50
-            : 0;
+          const pct = progress.passed ? 100 : progress.quizAttempts > 0 ? 50 : 0;
 
           return (
             <div
@@ -63,10 +66,7 @@ export default function Dashboard() {
               <h3>{mod.title}</h3>
               <p>{mod.description}</p>
               <div className="progress-bar-container">
-                <div
-                  className="progress-bar-fill"
-                  style={{ width: `${pct}%` }}
-                />
+                <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
               </div>
               <div className="progress-label">
                 <span>{pct}% complete</span>

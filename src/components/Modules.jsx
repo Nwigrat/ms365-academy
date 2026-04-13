@@ -1,26 +1,27 @@
 import { useAppContext } from "../context/AppContext";
-import MODULES from "../data/modules";
 
 export default function Modules() {
-  const { getModuleProgress, navigateTo } = useAppContext();
+  const { modules, modulesLoading, getModuleProgress, navigateTo } = useAppContext();
+
+  if (modulesLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, color: "#8aa4c0" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 12 }}>⏳</div>
+        <p>Loading modules...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <h2 style={{ color: "#fff", marginBottom: 6, fontSize: "1.4rem" }}>
-        📚 All Learning Modules
-      </h2>
+      <h2 style={{ color: "#fff", marginBottom: 6, fontSize: "1.4rem" }}>📚 All Learning Modules</h2>
       <p style={{ color: "#8aa4c0", marginBottom: 24 }}>
-        Complete each module's learning resources, then test your knowledge with
-        a quiz.
+        Complete each module's learning resources, then test your knowledge with a quiz.
       </p>
       <div className="module-grid">
-        {MODULES.map((mod) => {
+        {modules.map((mod) => {
           const progress = getModuleProgress(mod.id);
-          const pct = progress.passed
-            ? 100
-            : progress.quizAttempts > 0
-            ? 50
-            : 0;
+          const pct = progress.passed ? 100 : progress.quizAttempts > 0 ? 50 : 0;
 
           return (
             <div
@@ -33,10 +34,7 @@ export default function Modules() {
               <h3>{mod.title}</h3>
               <p>{mod.description}</p>
               <div className="progress-bar-container">
-                <div
-                  className="progress-bar-fill"
-                  style={{ width: `${pct}%` }}
-                />
+                <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
               </div>
               <div className="progress-label">
                 <span>Best: {progress.bestScore} pts</span>

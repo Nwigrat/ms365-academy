@@ -1,6 +1,8 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
-import MODULES, {
+import { fetchModuleDetail, submitScore } from "../services/api";
+import { useState as useStateEffect, useEffect } from "react";
+import {
   QUIZ_QUESTION_COUNT,
   PASS_THRESHOLD,
   POINTS_PER_CORRECT,
@@ -18,27 +20,67 @@ function shuffleArray(arr) {
 }
 
 export default function Quiz() {
-  const { quizModuleId, navigateTo, getModuleProgress, updateModuleProgress } =
+  const { quizModuleId, navigateTo, appState, getModuleProgress, updateModuleProgress } =
     useAppContext();
 
-  const mod = MODULES.find((m) => m.id === quizModuleId);
-
-  // Select 5 random questions on mount
-  const questions = useMemo(() => {
-    if (!mod) return [];
-    return shuffleArray(mod.questions).slice(0, QUIZ_QUESTION_COUNT);
-  }, [quizModuleId]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  const [moduleData, setModuleData] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [loadingModule, setLoadingModule] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [answers, setAnswers] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [submittingScore, setSubmittingScore] = useState(false);
 
-  if (!mod) return <p>Module not found.</p>;
+  // Fetch module and questions from the database
+  useEffect(() => {
+    async function loadQuiz() {
+      setLoadingModule(true);
+      try {
+        const data = await fetchModuleDetail(quizModuleId);
+        const mod = data.module;
+        setModuleData(mod);
+
+        // Pick 5 random questions from the pool
+        const allQuestions = mod.questions || [];
+        const shuffled = shuffleArray(allQuestions);
+        const selected = shuffled.slice(0, QUIZ_QUESTION_COUNT);
+        setQuestions(selected);
+      } catch (err) {
+        console.error("Failed to load quiz:", err);
+      } finally {
+        setLoadingModule(false);
+      }
+    }
+
+    if (quizModuleId) {
+      loadQuiz();
+    }
+  }, [quizModuleId]);
+
+  if (loadingModule) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, color: "#8aa4c0" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 12 }}>⏳</div>
+        <p>Loading quiz...</p>
+      </div>
+    );
+  }
+
+  if (!moduleData || questions.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, color: "#ef9a9a" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 12 }}>⚠️</div>
+        <p>No questions available for this module.</p>
+        <button className="btn btn-secondary" onClick={() => navigateTo("modules")} style={{ marginTop: 16 }}>
+          ← Back to Modules
+        </button>
+      </div>
+    );
+  }
 
   const currentQ = questions[currentIndex];
-  const score = answers.filter((a) => a.isCorrect).length;
 
   function handleSelect(index) {
     if (answered) return;
@@ -52,27 +94,43 @@ export default function Quiz() {
     ]);
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (currentIndex + 1 >= QUIZ_QUESTION_COUNT) {
       // Calculate final results
-      const finalAnswers = [
-        ...answers,
-      ];
+      const finalAnswers = [...answers];
       const finalScore = finalAnswers.filter((a) => a.isCorrect).length;
       const points =
         finalScore * POINTS_PER_CORRECT +
         (finalScore === QUIZ_QUESTION_COUNT ? BONUS_PERFECT : 0);
       const passed = finalScore >= PASS_THRESHOLD;
 
-      const progress = getModuleProgress(mod.id);
+      // Update local state
+      const progress = getModuleProgress(moduleData.id);
       const newData = {
         quizAttempts: progress.quizAttempts + 1,
         lastAttempt: new Date().toISOString(),
       };
       if (points > progress.bestScore) newData.bestScore = points;
       if (passed && !progress.passed) newData.passed = true;
+      updateModuleProgress(moduleData.id, newData);
 
-      updateModuleProgress(mod.id, newData);
+      // ===== SEND SCORE TO DATABASE =====
+      setSubmittingScore(true);
+      try {
+        await submitScore(
+          appState.user.id,
+          moduleData.id,
+          points,
+          passed
+        );
+        console.log("Score submitted to database successfully");
+      } catch (err) {
+        console.error("Failed to submit score to database:", err);
+        // Don't block the user — local state is already updated
+      } finally {
+        setSubmittingScore(false);
+      }
+
       setShowResults(true);
     } else {
       setCurrentIndex((i) => i + 1);
@@ -100,7 +158,7 @@ export default function Quiz() {
       (finalScore === QUIZ_QUESTION_COUNT ? BONUS_PERFECT : 0);
     return (
       <QuizResults
-        mod={mod}
+        mod={moduleData}
         score={finalScore}
         total={QUIZ_QUESTION_COUNT}
         points={points}
@@ -122,7 +180,7 @@ export default function Quiz() {
         <div className="quiz-header">
           <div>
             <h2 style={{ color: "#fff", fontSize: "1.2rem" }}>
-              {mod.icon} {mod.title} Quiz
+              {moduleData.icon} {moduleData.title} Quiz
             </h2>
           </div>
           <div className="quiz-progress">
