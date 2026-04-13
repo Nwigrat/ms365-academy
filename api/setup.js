@@ -5,8 +5,8 @@ export default async function handler(req, res) {
 
   try {
     // ⚠️ Uncomment these two lines ONCE to recreate tables, then re-comment them
-    await sql`DROP TABLE IF EXISTS scores`;
-    await sql`DROP TABLE IF EXISTS users`;
+    // await sql`DROP TABLE IF EXISTS scores`;
+    // await sql`DROP TABLE IF EXISTS users`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS users (
