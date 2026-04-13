@@ -44,7 +44,7 @@ export default function Profile() {
         </div>
 
         <h3 style={{ color: "#4fc3f7", margin: "24px 0 12px" }}>📋 Module Progress</h3>
-        {modules.map((mod) => {
+        {(modules || []).map((mod) => {
           const progress = getModuleProgress(mod.id);
           return (
             <div key={mod.id} style={{ padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>

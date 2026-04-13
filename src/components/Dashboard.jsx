@@ -8,15 +8,6 @@ export default function Dashboard() {
   ).length;
   const displayName = appState.user?.firstName || "Agent";
 
-  if (modulesLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: 60, color: "#8aa4c0" }}>
-        <div style={{ fontSize: "2rem", marginBottom: 12 }}>⏳</div>
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="welcome-banner">
@@ -50,40 +41,51 @@ export default function Dashboard() {
       </div>
 
       <h2 style={{ color: "#4fc3f7", marginBottom: 16 }}>📌 Continue Learning</h2>
-      <div className="module-grid">
-        {modules.map((mod) => {
-          const progress = getModuleProgress(mod.id);
-          const pct = progress.passed ? 100 : progress.quizAttempts > 0 ? 50 : 0;
 
-          return (
-            <div
-              key={mod.id}
-              className="module-card"
-              onClick={() => navigateTo("module-detail", mod.id)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className="module-icon">{mod.icon}</div>
-              <h3>{mod.title}</h3>
-              <p>{mod.description}</p>
-              <div className="progress-bar-container">
-                <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+      {modulesLoading ? (
+        <div style={{ textAlign: "center", padding: 40, color: "#8aa4c0" }}>
+          ⏳ Loading modules...
+        </div>
+      ) : modules.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 40, color: "#8aa4c0" }}>
+          <p>No modules available yet. An admin needs to create modules first.</p>
+        </div>
+      ) : (
+        <div className="module-grid">
+          {modules.map((mod) => {
+            const progress = getModuleProgress(mod.id);
+            const pct = progress.passed ? 100 : progress.quizAttempts > 0 ? 50 : 0;
+
+            return (
+              <div
+                key={mod.id}
+                className="module-card"
+                onClick={() => navigateTo("module-detail", mod.id)}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="module-icon">{mod.icon}</div>
+                <h3>{mod.title}</h3>
+                <p>{mod.description}</p>
+                <div className="progress-bar-container">
+                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="progress-label">
+                  <span>{pct}% complete</span>
+                  <span>
+                    {progress.passed ? (
+                      <span className="badge badge-completed">✓ Completed</span>
+                    ) : progress.quizAttempts > 0 ? (
+                      <span className="badge badge-in-progress">In Progress</span>
+                    ) : (
+                      <span className="badge badge-not-started">Not Started</span>
+                    )}
+                  </span>
+                </div>
               </div>
-              <div className="progress-label">
-                <span>{pct}% complete</span>
-                <span>
-                  {progress.passed ? (
-                    <span className="badge badge-completed">✓ Completed</span>
-                  ) : progress.quizAttempts > 0 ? (
-                    <span className="badge badge-in-progress">In Progress</span>
-                  ) : (
-                    <span className="badge badge-not-started">Not Started</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
