@@ -8,13 +8,14 @@ export default function Dashboard() {
     (p) => p.passed
   ).length;
   const quizzesPassed = completedCount;
+  const displayName = appState.user?.firstName || "Agent";
 
   return (
     <div>
       <div className="welcome-banner">
         <div style={{ fontSize: "3rem" }}>🚀</div>
         <div className="welcome-text">
-          <h2>Welcome back, {appState.userName || "Agent"}!</h2>
+          <h2>Welcome back, {displayName}!</h2>
           <p>
             Continue your Microsoft 365 journey. Complete modules, ace quizzes,
             and climb the leaderboard!

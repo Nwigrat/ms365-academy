@@ -6,7 +6,7 @@ const STORAGE_KEY = "m365hub_state";
 
 function getDefaultState() {
   return {
-    userName: "",
+    user: null, // { id, firstName, lastName, username, displayName }
     totalScore: 0,
     moduleProgress: {},
     bestStreak: 0,
@@ -16,7 +16,7 @@ function getDefaultState() {
 function loadFromStorage() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (data && data.userName) return data;
+    if (data && data.user) return data;
   } catch (e) {
     /* ignore */
   }
@@ -32,6 +32,22 @@ export function AppProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   }, [appState]);
+
+  // Check if user is logged in
+  const isAuthenticated = appState.user !== null;
+
+  function login(userData) {
+    setAppState((prev) => ({
+      ...prev,
+      user: userData,
+    }));
+  }
+
+  function logout() {
+    setAppState(getDefaultState());
+    localStorage.removeItem(STORAGE_KEY);
+    setCurrentPage("dashboard");
+  }
 
   function getModuleProgress(moduleId) {
     return (
@@ -60,13 +76,11 @@ export function AppProvider({ children }) {
         [moduleId]: updated,
       };
 
-      // Recalculate total score
       let totalScore = 0;
       Object.values(newModuleProgress).forEach((mp) => {
         totalScore += mp.bestScore || 0;
       });
 
-      // Recalculate streak
       const passedCount = Object.values(newModuleProgress).filter(
         (mp) => mp.passed
       ).length;
@@ -78,10 +92,6 @@ export function AppProvider({ children }) {
         bestStreak: Math.max(prev.bestStreak, passedCount),
       };
     });
-  }
-
-  function setUserName(name) {
-    setAppState((prev) => ({ ...prev, userName: name }));
   }
 
   function navigateTo(page, moduleId = null) {
@@ -99,9 +109,11 @@ export function AppProvider({ children }) {
     currentPage,
     selectedModuleId,
     quizModuleId,
+    isAuthenticated,
+    login,
+    logout,
     getModuleProgress,
     updateModuleProgress,
-    setUserName,
     navigateTo,
     startQuizForModule,
   };

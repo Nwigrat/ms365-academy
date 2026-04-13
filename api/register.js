@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,28 +7,54 @@ export default async function handler(req, res) {
   }
 
   const sql = neon(process.env.DATABASE_URL);
-  const { username } = req.body;
+  const { firstName, lastName, username, password } = req.body;
 
-  if (!username || username.trim().length === 0) {
+  // Validation
+  if (!firstName || !firstName.trim()) {
+    return res.status(400).json({ error: 'First name is required' });
+  }
+  if (!lastName || !lastName.trim()) {
+    return res.status(400).json({ error: 'Last name is required' });
+  }
+  if (!username || !username.trim()) {
     return res.status(400).json({ error: 'Username is required' });
+  }
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
   try {
+    // Check if username already exists
     const existing = await sql`
-      SELECT * FROM users WHERE username = ${username.trim()}
+      SELECT id FROM users WHERE username = ${username.trim().toLowerCase()}
     `;
 
     if (existing.length > 0) {
-      return res.status(200).json({ user: existing[0], isNew: false });
+      return res.status(409).json({ error: 'Username already taken' });
     }
 
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Insert new user
     const result = await sql`
-      INSERT INTO users (username)
-      VALUES (${username.trim()})
-      RETURNING *
+      INSERT INTO users (first_name, last_name, username, password)
+      VALUES (${firstName.trim()}, ${lastName.trim()}, ${username.trim().toLowerCase()}, ${hashedPassword})
+      RETURNING id, first_name, last_name, username, created_at
     `;
 
-    res.status(201).json({ user: result[0], isNew: true });
+    const user = result[0];
+
+    res.status(201).json({
+      user: {
+        id: user.id,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        username: user.username,
+        displayName: `${user.first_name} ${user.last_name}`,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

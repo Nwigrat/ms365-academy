@@ -4,10 +4,17 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
+    // Drop old tables if you need a fresh start (remove these 2 lines after first run)
+    // await sql`DROP TABLE IF EXISTS scores`;
+    // await sql`DROP TABLE IF EXISTS users`;
+
     await sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
+        first_name VARCHAR(40) NOT NULL,
+        last_name VARCHAR(40) NOT NULL,
         username VARCHAR(40) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
