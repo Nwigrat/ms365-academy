@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { fetchModuleDetail, submitScore } from "../services/api";
-import { useState as useStateEffect, useEffect } from "react";
 import {
   QUIZ_QUESTION_COUNT,
   PASS_THRESHOLD,
