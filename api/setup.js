@@ -4,9 +4,9 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
-    // WARNING: Uncomment these ONLY if you need to reset the database
-    // await sql`DROP TABLE IF EXISTS scores`;
-    // await sql`DROP TABLE IF EXISTS users`;
+    // ⚠️ Uncomment these two lines ONCE to recreate tables, then re-comment them
+    await sql`DROP TABLE IF EXISTS scores`;
+    await sql`DROP TABLE IF EXISTS users`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS users (
@@ -15,6 +15,7 @@ export default async function handler(req, res) {
         last_name VARCHAR(40) NOT NULL,
         username VARCHAR(40) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        role VARCHAR(20) DEFAULT 'user',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;

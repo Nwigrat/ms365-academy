@@ -9,7 +9,6 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
   const { firstName, lastName, username, password } = req.body;
 
-  // Validation
   if (!firstName || !firstName.trim()) {
     return res.status(400).json({ error: 'First name is required' });
   }
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check if username already exists
     const existing = await sql`
       SELECT id FROM users WHERE username = ${username.trim().toLowerCase()}
     `;
@@ -33,15 +31,23 @@ export default async function handler(req, res) {
       return res.status(409).json({ error: 'Username already taken' });
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert new user
+    // Check if this is the first user — make them admin automatically
+    const userCount = await sql`SELECT COUNT(*)::int AS count FROM users`;
+    const isFirstUser = userCount[0].count === 0;
+
     const result = await sql`
-      INSERT INTO users (first_name, last_name, username, password)
-      VALUES (${firstName.trim()}, ${lastName.trim()}, ${username.trim().toLowerCase()}, ${hashedPassword})
-      RETURNING id, first_name, last_name, username, created_at
+      INSERT INTO users (first_name, last_name, username, password, role)
+      VALUES (
+        ${firstName.trim()},
+        ${lastName.trim()},
+        ${username.trim().toLowerCase()},
+        ${hashedPassword},
+        ${isFirstUser ? 'admin' : 'user'}
+      )
+      RETURNING id, first_name, last_name, username, role, created_at
     `;
 
     const user = result[0];
@@ -53,6 +59,7 @@ export default async function handler(req, res) {
         lastName: user.last_name,
         username: user.username,
         displayName: `${user.first_name} ${user.last_name}`,
+        role: user.role,
       },
     });
   } catch (error) {

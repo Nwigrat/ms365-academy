@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   try {
     const result = await sql`
-      SELECT id, first_name, last_name, username, password
+      SELECT id, first_name, last_name, username, password, role
       FROM users
       WHERE username = ${username.trim().toLowerCase()}
     `;
@@ -25,15 +25,12 @@ export default async function handler(req, res) {
     }
 
     const user = result[0];
-
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Return user data (never return the password!)
     res.status(200).json({
       user: {
         id: user.id,
@@ -41,6 +38,7 @@ export default async function handler(req, res) {
         lastName: user.last_name,
         username: user.username,
         displayName: `${user.first_name} ${user.last_name}`,
+        role: user.role || 'user',
       },
     });
   } catch (error) {

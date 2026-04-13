@@ -8,11 +8,11 @@ import ModuleDetail from "./components/ModuleDetail";
 import Quiz from "./components/Quiz";
 import Leaderboard from "./components/Leaderboard";
 import Profile from "./components/Profile";
+import AdminPanel from "./components/AdminPanel";
 
 function AppContent() {
-  const { currentPage, isAuthenticated } = useAppContext();
+  const { currentPage, isAuthenticated, appState } = useAppContext();
 
-  // If not logged in, show the auth page
   if (!isAuthenticated) {
     return <AuthPage />;
   }
@@ -31,6 +31,12 @@ function AppContent() {
         return <Leaderboard />;
       case "profile":
         return <Profile />;
+      case "admin":
+        return appState.user?.role === "admin" ? (
+          <AdminPanel />
+        ) : (
+          <Dashboard />
+        );
       default:
         return <Dashboard />;
     }
