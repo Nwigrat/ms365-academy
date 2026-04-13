@@ -4,9 +4,9 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
-    // Drop old tables if you need a fresh start (remove these 2 lines after first run)
-    // await sql`DROP TABLE IF EXISTS scores`;
-    // await sql`DROP TABLE IF EXISTS users`;
+    // Drop old tables to recreate with new schema
+    await sql`DROP TABLE IF EXISTS scores`;
+    await sql`DROP TABLE IF EXISTS users`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS users (
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       )
     `;
 
-    res.status(200).json({ message: "Tables created successfully!" });
+    res.status(200).json({ message: "Tables recreated successfully!" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
