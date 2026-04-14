@@ -11,6 +11,7 @@ import Profile from "./components/Profile";
 import Badges from "./components/Badges";
 import AdminPanel from "./components/AdminPanel";
 import AdminAnalytics from "./components/AdminAnalytics";
+import AdminModules from "./components/AdminModules";
 
 function AppContent() {
   const { currentPage, isAuthenticated, appState } = useAppContext();
@@ -30,6 +31,7 @@ function AppContent() {
       case "badges": return <Badges />;
       case "admin": return appState.user?.role === "admin" ? <AdminPanel /> : <Dashboard />;
       case "admin-analytics": return appState.user?.role === "admin" ? <AdminAnalytics /> : <Dashboard />;
+      case "admin-modules": return appState.user?.role === "admin" ? <AdminModules /> : <Dashboard />;
       default: return <Dashboard />;
     }
   }

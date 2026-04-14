@@ -179,8 +179,13 @@ export default function AdminPanel() {
         >
           📊 Analytics Dashboard
         </button>
-      </div>
-
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigateTo("admin-modules")}
+        >
+          📚 Module Manager
+        </button>
+      </div>   
       {/* Action message */}
       {actionMessage && (
         <div
