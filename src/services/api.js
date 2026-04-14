@@ -165,3 +165,10 @@ export async function adminDeleteResource(resourceId) {
   const res = await fetch(`${API_BASE}/content?action=resources&id=${resourceId}`, { method: 'DELETE', headers: adminHeaders() });
   const data = await res.json(); if (!res.ok) throw new Error(data.error); return data;
 }
+// ===== USER STATS (from DB) =====
+export async function getUserStats(userId) {
+  const res = await fetch(`${API_BASE}/scores?action=user-stats&userId=${userId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+}

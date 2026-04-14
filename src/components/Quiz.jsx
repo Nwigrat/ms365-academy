@@ -25,6 +25,7 @@ export default function Quiz() {
     appState,
     getModuleProgress,
     updateModuleProgress,
+    refreshStats,
   } = useAppContext();
 
   const [moduleData, setModuleData] = useState(null);
@@ -148,6 +149,12 @@ export default function Quiz() {
         }
       } catch (err) {
         console.error("Failed to check badges:", err);
+      }
+      // ===== REFRESH DB STATS =====
+      try {
+        await refreshStats();
+      } catch (err) {
+        console.error("Failed to refresh stats:", err);
       }
 
       setShowResults(true);

@@ -4,8 +4,9 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
   const { action } = req.query;
 
-  // GET actions
+  // ===== GET ACTIONS =====
   if (req.method === 'GET') {
+
     if (action === 'leaderboard') {
       try {
         const result = await sql`
@@ -45,10 +46,100 @@ export default async function handler(req, res) {
       }
     }
 
+    if (action === 'user-stats') {
+      const { userId } = req.query;
+      if (!userId) return res.status(400).json({ error: 'userId required' });
+
+      try {
+        // Core score stats
+        const scoreStats = await sql`
+          SELECT
+            COALESCE(SUM(best_score), 0)::int AS total_score,
+            COALESCE(SUM(quiz_attempts), 0)::int AS total_attempts,
+            COUNT(CASE WHEN passed = true THEN 1 END)::int AS modules_completed,
+            COUNT(*)::int AS modules_attempted
+          FROM scores
+          WHERE user_id = ${userId}
+        `;
+
+        // Per-module breakdown
+        const moduleProgress = await sql`
+          SELECT
+            s.module_id,
+            m.icon,
+            m.title,
+            s.best_score,
+            s.quiz_attempts,
+            s.passed,
+            s.last_attempt
+          FROM scores s
+          JOIN modules m ON s.module_id = m.id
+          WHERE s.user_id = ${userId}
+          ORDER BY m.sort_order
+        `;
+
+        // Total available modules
+        const totalModules = await sql`
+          SELECT COUNT(*)::int AS count FROM modules WHERE is_active = true
+        `;
+
+        // Badge count
+        const badgeCount = await sql`
+          SELECT COUNT(*)::int AS count FROM user_badges WHERE user_id = ${userId}
+        `;
+
+        // Total badges available
+        const totalBadges = 12; // matches BADGE_DEFINITIONS length
+
+        // Leaderboard rank
+        const leaderboard = await sql`
+          SELECT user_id, COALESCE(SUM(best_score), 0)::int AS total_score
+          FROM scores
+          GROUP BY user_id
+          ORDER BY total_score DESC
+        `;
+        const totalUsers = await sql`SELECT COUNT(*)::int AS count FROM users`;
+        const rank = leaderboard.findIndex(r => r.user_id === parseInt(userId)) + 1;
+
+        // Recent activity (last 5 quiz attempts by this user)
+        const recentActivity = await sql`
+          SELECT
+            s.module_id,
+            m.icon,
+            m.title,
+            s.best_score,
+            s.passed,
+            s.quiz_attempts,
+            s.last_attempt
+          FROM scores s
+          JOIN modules m ON s.module_id = m.id
+          WHERE s.user_id = ${userId} AND s.last_attempt IS NOT NULL
+          ORDER BY s.last_attempt DESC
+          LIMIT 5
+        `;
+
+        return res.status(200).json({
+          totalScore: scoreStats[0]?.total_score || 0,
+          totalAttempts: scoreStats[0]?.total_attempts || 0,
+          modulesCompleted: scoreStats[0]?.modules_completed || 0,
+          modulesAttempted: scoreStats[0]?.modules_attempted || 0,
+          totalModules: totalModules[0]?.count || 0,
+          badgesEarned: badgeCount[0]?.count || 0,
+          totalBadges,
+          leaderboardRank: rank || 0,
+          totalUsers: totalUsers[0]?.count || 0,
+          moduleProgress,
+          recentActivity,
+        });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
+    }
+
     return res.status(400).json({ error: 'Invalid action' });
   }
 
-  // POST: submit score
+  // ===== POST: submit score =====
   if (req.method === 'POST' && action === 'submit') {
     const { userId, moduleId, score, passed } = req.body;
 
