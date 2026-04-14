@@ -16,7 +16,6 @@ export default async function handler(req, res) {
       )
     `;
 
-    // Add role column if it doesn't exist (safe for existing tables)
     await sql`
       DO $$ BEGIN
         ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
@@ -72,6 +71,16 @@ export default async function handler(req, res) {
         passed BOOLEAN DEFAULT FALSE,
         last_attempt TIMESTAMP,
         UNIQUE(user_id, module_id)
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_badges (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        badge_id VARCHAR(50) NOT NULL,
+        unlocked_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, badge_id)
       )
     `;
 

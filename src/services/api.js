@@ -238,3 +238,32 @@ export async function adminDeleteResource(resourceId) {
   if (!res.ok) throw new Error(data.error);
   return data;
 }
+
+// ===== BADGES =====
+export async function getUserBadges(userId) {
+  const res = await fetch(`${API_BASE}/badges?userId=${userId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+}
+
+export async function checkBadges(userId) {
+  const res = await fetch(`${API_BASE}/badges`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+}
+
+// ===== ANALYTICS =====
+export async function getAnalytics() {
+  const res = await fetch(`${API_BASE}/analytics`, {
+    headers: adminHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+}

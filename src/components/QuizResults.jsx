@@ -8,6 +8,7 @@ export default function QuizResults({
   points,
   answers,
   questions,
+  newBadges = [],
 }) {
   const { navigateTo, startQuizForModule } = useAppContext();
   const passed = score >= PASS_THRESHOLD;
@@ -34,6 +35,76 @@ export default function QuizResults({
           )}
         </p>
 
+        {/* New badges unlocked */}
+        {newBadges.length > 0 && (
+          <div
+            style={{
+              background: "rgba(255,213,79,0.1)",
+              border: "1px solid rgba(255,213,79,0.3)",
+              borderRadius: 12,
+              padding: "16px 20px",
+              marginBottom: 20,
+              maxWidth: 500,
+              margin: "0 auto 20px",
+            }}
+          >
+            <h3
+              style={{
+                color: "#ffd54f",
+                fontSize: "1rem",
+                marginBottom: 12,
+                textAlign: "center",
+              }}
+            >
+              🏅 New Badges Unlocked!
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                gap: 12,
+              }}
+            >
+              {newBadges.map((badge) => (
+                <div
+                  key={badge.id}
+                  style={{
+                    background: "rgba(255,213,79,0.1)",
+                    borderRadius: 10,
+                    padding: "12px 16px",
+                    textAlign: "center",
+                    minWidth: 120,
+                  }}
+                >
+                  <div style={{ fontSize: "2rem", marginBottom: 4 }}>
+                    {badge.icon}
+                  </div>
+                  <div
+                    style={{
+                      color: "#ffd54f",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {badge.name}
+                  </div>
+                  <div
+                    style={{
+                      color: "#8aa4c0",
+                      fontSize: "0.7rem",
+                      marginTop: 2,
+                    }}
+                  >
+                    {badge.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Answer summary */}
         <div
           style={{ textAlign: "left", maxWidth: 500, margin: "0 auto 20px" }}
         >
@@ -53,7 +124,9 @@ export default function QuizResults({
               <span style={{ fontSize: "1.2rem" }}>
                 {answers[i].isCorrect ? "✅" : "❌"}
               </span>
-              <span style={{ color: "#9eb8d6", fontSize: "0.85rem", flex: 1 }}>
+              <span
+                style={{ color: "#9eb8d6", fontSize: "0.85rem", flex: 1 }}
+              >
                 Q{i + 1}:{" "}
                 {answers[i].isCorrect
                   ? "Correct"
@@ -84,6 +157,18 @@ export default function QuizResults({
           >
             🏠 Dashboard
           </button>
+          {newBadges.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigateTo("badges")}
+              style={{
+                borderColor: "rgba(255,213,79,0.3)",
+                color: "#ffd54f",
+              }}
+            >
+              🏅 View All Badges
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { fetchModuleDetail, submitScore } from "../services/api";
+import { fetchModuleDetail, submitScore, checkBadges } from "../services/api";
 import {
   QUIZ_QUESTION_COUNT,
   PASS_THRESHOLD,
@@ -19,8 +19,13 @@ function shuffleArray(arr) {
 }
 
 export default function Quiz() {
-  const { quizModuleId, navigateTo, appState, getModuleProgress, updateModuleProgress } =
-    useAppContext();
+  const {
+    quizModuleId,
+    navigateTo,
+    appState,
+    getModuleProgress,
+    updateModuleProgress,
+  } = useAppContext();
 
   const [moduleData, setModuleData] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -30,7 +35,7 @@ export default function Quiz() {
   const [answered, setAnswered] = useState(false);
   const [answers, setAnswers] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [submittingScore, setSubmittingScore] = useState(false);
+  const [newBadges, setNewBadges] = useState([]);
 
   // Fetch module and questions from the database
   useEffect(() => {
@@ -54,10 +59,18 @@ export default function Quiz() {
     }
 
     if (quizModuleId) {
+      // Reset state for new quiz
+      setCurrentIndex(0);
+      setSelectedOption(null);
+      setAnswered(false);
+      setAnswers([]);
+      setShowResults(false);
+      setNewBadges([]);
       loadQuiz();
     }
   }, [quizModuleId]);
 
+  // Loading state
   if (loadingModule) {
     return (
       <div style={{ textAlign: "center", padding: 60, color: "#8aa4c0" }}>
@@ -67,12 +80,17 @@ export default function Quiz() {
     );
   }
 
+  // No module or questions found
   if (!moduleData || questions.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: 60, color: "#ef9a9a" }}>
         <div style={{ fontSize: "2rem", marginBottom: 12 }}>⚠️</div>
         <p>No questions available for this module.</p>
-        <button className="btn btn-secondary" onClick={() => navigateTo("modules")} style={{ marginTop: 16 }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigateTo("modules")}
+          style={{ marginTop: 16 }}
+        >
           ← Back to Modules
         </button>
       </div>
@@ -114,20 +132,22 @@ export default function Quiz() {
       updateModuleProgress(moduleData.id, newData);
 
       // ===== SEND SCORE TO DATABASE =====
-      setSubmittingScore(true);
       try {
-        await submitScore(
-          appState.user.id,
-          moduleData.id,
-          points,
-          passed
-        );
+        await submitScore(appState.user.id, moduleData.id, points, passed);
         console.log("Score submitted to database successfully");
       } catch (err) {
         console.error("Failed to submit score to database:", err);
-        // Don't block the user — local state is already updated
-      } finally {
-        setSubmittingScore(false);
+      }
+
+      // ===== CHECK FOR NEW BADGES =====
+      try {
+        const badgeResult = await checkBadges(appState.user.id);
+        if (badgeResult.newlyUnlocked && badgeResult.newlyUnlocked.length > 0) {
+          console.log("New badges unlocked!", badgeResult.newlyUnlocked);
+          setNewBadges(badgeResult.newlyUnlocked);
+        }
+      } catch (err) {
+        console.error("Failed to check badges:", err);
       }
 
       setShowResults(true);
@@ -150,6 +170,7 @@ export default function Quiz() {
     navigateTo("modules");
   }
 
+  // Show results screen
   if (showResults) {
     const finalScore = answers.filter((a) => a.isCorrect).length;
     const points =
@@ -163,10 +184,12 @@ export default function Quiz() {
         points={points}
         answers={answers}
         questions={questions}
+        newBadges={newBadges}
       />
     );
   }
 
+  // Quiz question screen
   const qNum = currentIndex + 1;
 
   return (
@@ -241,7 +264,9 @@ export default function Quiz() {
         {answered && (
           <div style={{ textAlign: "right", marginTop: 12 }}>
             <button className="btn btn-primary" onClick={handleNext}>
-              {qNum < QUIZ_QUESTION_COUNT ? "Next Question →" : "See Results →"}
+              {qNum < QUIZ_QUESTION_COUNT
+                ? "Next Question →"
+                : "See Results →"}
             </button>
           </div>
         )}

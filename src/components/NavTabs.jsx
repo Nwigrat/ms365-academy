@@ -8,11 +8,11 @@ export default function NavTabs() {
   const tabs = [
     { id: "dashboard", label: "🏠 Dashboard" },
     { id: "modules", label: "📚 Modules" },
+    { id: "badges", label: "🏅 Badges" },
     { id: "leaderboard", label: "🏆 Leaderboard" },
     { id: "profile", label: "👤 Profile" },
   ];
 
-  // Add admin tab if user is admin
   if (isAdmin) {
     tabs.push({ id: "admin", label: "🛡️ Admin" });
   }

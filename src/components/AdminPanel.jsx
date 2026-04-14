@@ -12,7 +12,7 @@ import {
 } from "../services/api";
 
 export default function AdminPanel() {
-  const { appState } = useAppContext();
+  const { appState, navigateTo } = useAppContext();
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,12 @@ export default function AdminPanel() {
   }
 
   async function handleDeleteUser(userId, username) {
-    if (!window.confirm(`Are you sure you want to delete user "${username}"? This will also delete all their scores.`)) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete user "${username}"? This will also delete all their scores and badges.`
+      )
+    )
+      return;
     try {
       await adminDeleteUser(userId);
       showMessage(`User "${username}" deleted successfully`);
@@ -91,8 +96,14 @@ export default function AdminPanel() {
   }
 
   async function handleResetAllScores() {
-    if (!window.confirm("⚠️ This will reset ALL scores for ALL users. Are you sure?")) return;
-    if (!window.confirm("This cannot be undone. Are you absolutely sure?")) return;
+    if (
+      !window.confirm(
+        "⚠️ This will reset ALL scores for ALL users. Are you sure?"
+      )
+    )
+      return;
+    if (!window.confirm("This cannot be undone. Are you absolutely sure?"))
+      return;
     try {
       await adminResetAllScores();
       showMessage("All scores have been reset");
@@ -103,8 +114,16 @@ export default function AdminPanel() {
   }
 
   async function handleDeleteAllUsers() {
-    if (!window.confirm("⚠️ This will delete ALL users and scores (except yours). Are you sure?")) return;
-    if (!window.confirm("This CANNOT be undone. Type 'yes' in the next prompt to confirm.")) return;
+    if (
+      !window.confirm(
+        "⚠️ This will delete ALL users and scores (except yours). Are you sure?"
+      )
+    )
+      return;
+    if (
+      !window.confirm("This CANNOT be undone. Are you absolutely sure?")
+    )
+      return;
     try {
       await adminDeleteAllUsers();
       showMessage("All users deleted (except you)");
@@ -149,10 +168,25 @@ export default function AdminPanel() {
         Manage users, roles, and scores.
       </p>
 
+      {/* Admin sub-navigation */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        <button className="btn btn-primary">
+          👥 User Management
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigateTo("admin-analytics")}
+        >
+          📊 Analytics Dashboard
+        </button>
+      </div>
+
       {/* Action message */}
       {actionMessage && (
         <div
-          className={`admin-message ${actionMessage.isError ? "error" : "success"}`}
+          className={`admin-message ${
+            actionMessage.isError ? "error" : "success"
+          }`}
         >
           {actionMessage.isError ? "❌" : "✅"} {actionMessage.text}
         </div>
@@ -222,8 +256,17 @@ export default function AdminPanel() {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: "center", padding: 40, color: "#8aa4c0" }}>
-                  {searchTerm ? "No users match your search" : "No users found"}
+                <td
+                  colSpan="8"
+                  style={{
+                    textAlign: "center",
+                    padding: 40,
+                    color: "#8aa4c0",
+                  }}
+                >
+                  {searchTerm
+                    ? "No users match your search"
+                    : "No users found"}
                 </td>
               </tr>
             ) : (
@@ -234,7 +277,11 @@ export default function AdminPanel() {
                 return (
                   <tr
                     key={user.id}
-                    style={isYou ? { background: "rgba(0,120,212,0.1)" } : {}}
+                    style={
+                      isYou
+                        ? { background: "rgba(0,120,212,0.1)" }
+                        : {}
+                    }
                   >
                     <td style={{ color: "#8aa4c0" }}>#{user.id}</td>
                     <td>
@@ -255,13 +302,21 @@ export default function AdminPanel() {
                         {isAdmin ? "🛡️ Admin" : "👤 User"}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600, color: "#ffd54f" }}>
+                    <td
+                      style={{ fontWeight: 600, color: "#ffd54f" }}
+                    >
                       {user.total_score} pts
                     </td>
                     <td style={{ color: "#8aa4c0" }}>
-                      {user.modules_completed}/6
+                      {user.modules_completed}/
+                      {appState.modules?.length || 6}
                     </td>
-                    <td style={{ color: "#8aa4c0", fontSize: "0.8rem" }}>
+                    <td
+                      style={{
+                        color: "#8aa4c0",
+                        fontSize: "0.8rem",
+                      }}
+                    >
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td>
@@ -272,7 +327,9 @@ export default function AdminPanel() {
                             {isAdmin ? (
                               <button
                                 className="admin-action-btn demote"
-                                onClick={() => handleDemote(user.id, user.username)}
+                                onClick={() =>
+                                  handleDemote(user.id, user.username)
+                                }
                                 title="Remove admin access"
                               >
                                 ⬇️
@@ -280,7 +337,9 @@ export default function AdminPanel() {
                             ) : (
                               <button
                                 className="admin-action-btn promote"
-                                onClick={() => handlePromote(user.id, user.username)}
+                                onClick={() =>
+                                  handlePromote(user.id, user.username)
+                                }
                                 title="Promote to admin"
                               >
                                 ⬆️
@@ -292,7 +351,9 @@ export default function AdminPanel() {
                         {/* Reset scores */}
                         <button
                           className="admin-action-btn reset"
-                          onClick={() => handleResetScores(user.id, user.username)}
+                          onClick={() =>
+                            handleResetScores(user.id, user.username)
+                          }
                           title="Reset scores"
                         >
                           🔄
@@ -302,7 +363,9 @@ export default function AdminPanel() {
                         {!isYou && (
                           <button
                             className="admin-action-btn delete"
-                            onClick={() => handleDeleteUser(user.id, user.username)}
+                            onClick={() =>
+                              handleDeleteUser(user.id, user.username)
+                            }
                             title="Delete user"
                           >
                             🗑️
@@ -318,7 +381,14 @@ export default function AdminPanel() {
         </table>
       </div>
 
-      <p style={{ color: "#8aa4c0", fontSize: "0.8rem", marginTop: 16, textAlign: "center" }}>
+      <p
+        style={{
+          color: "#8aa4c0",
+          fontSize: "0.8rem",
+          marginTop: 16,
+          textAlign: "center",
+        }}
+      >
         Showing {filteredUsers.length} of {users.length} users
       </p>
     </div>
